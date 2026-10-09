@@ -1,17 +1,14 @@
-# Use Node.js base image
-FROM node:22-alpine
-
+# Stage 1: build the React app
+FROM node:22-alpine AS build
 WORKDIR /app
-
-# Copy package.json and install dependencies with legacy-peer-deps
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
-
-# Copy the rest of the frontend code
 COPY . .
+RUN npm run build
 
-# Expose port
-EXPOSE 3000
-
-# Start React dev server
-CMD ["npm", "start"]
+# Stage 2: serve the built files
+FROM node:22-alpine
+WORKDIR /app
+RUN npm install -g serve
+COPY --from=build /app/build ./build
+CMD serve -s build -l ${PORT:-3000}
